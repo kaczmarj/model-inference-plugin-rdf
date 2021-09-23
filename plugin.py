@@ -52,6 +52,9 @@ class State:
         self._path = Path(path).resolve()
         self._graph = Graph()
 
+        self._add_header()
+
+    def _add_header(self):
         # TODO: how to reference self in rdf graph? I don't want this to be Dataset.
         self._graph.bind("schema", SDO)
         us = URIRef("")
@@ -63,7 +66,7 @@ class State:
             self._graph.add((us, SDO.license, Literal(self._license)))
         if self._keywords is not None:
             self._graph.add(
-                (us, SDO.keywords, Literal('"' + '","'.join(keywords) + '"'))
+                (us, SDO.keywords, Literal('"' + '","'.join(self._keywords) + '"'))
             )
 
     def add(
