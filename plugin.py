@@ -1,6 +1,8 @@
 """Plugin to create or update RDF file based on model outputs."""
 
+import builtins
 import datetime
+import gzip
 from pathlib import Path
 from typing import Optional
 from typing import Sequence
@@ -34,7 +36,7 @@ class State:
     def __init__(
         self,
         *,
-        path: Union[Path, str, bytes],
+        path: Union[Path, str],
         creator: str,
         name: str,
         description: str,
@@ -106,7 +108,8 @@ class State:
         output = self._graph.serialize(destination=None, format=format)
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
-        with self._path.open("wt") as f:
+        open_fn = gzip.open if self._path.suffix == ".gz" else builtins.open
+        with open_fn(self._path) as f:
             f.write(output)
 
 
