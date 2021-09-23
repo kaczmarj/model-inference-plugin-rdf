@@ -109,7 +109,7 @@ class State:
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
         open_fn = gzip.open if self._path.suffix == ".gz" else builtins.open
-        with open_fn(self._path) as f:
+        with open_fn(self._path, mode="wt") as f:
             f.write(output)
 
 
