@@ -14,16 +14,16 @@ from rdflib import BNode
 from rdflib import Graph
 from rdflib import Literal
 from rdflib import URIRef
+from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
 from rdflib.namespace import SDO
+from rdflib.namespace import XSD
 
-uriref_annotation = URIRef("http://www.w3.org/ns/oa/Annotation")
-uriref_body = URIRef("http://www.w3.org/ns/oa/body")
-uriref_source = URIRef("http://www.w3.org/ns/oa/source")
-uriref_target = URIRef("http://www.w3.org/ns/oa/target")
-uriref_fragment_selector = URIRef("http://www.w3.org/ns/oa/FragmentSelector")
-uriref_selector = URIRef("http://www.w3.org/ns/oa/Selector")
-uriref_model_output = URIRef("https://bmi.stonybrookmedicine.edu/ns/modelOutput")
+dcmi = Namespace("http://purl.org/dc/terms/")
+sbubmi_terms = Namespace("https://bmi.stonybrookmedicine.edu/ns/")
+snomed = Namespace("http://purl.bioontology.org/ontology/SNOMEDCT")
+w3_oa = Namespace("http://www.w3.org/ns/oa/")
+w3_technical_reports = Namespace("https://www.w3.org/TR/")
 
 
 class UnknownCellType(Exception):
@@ -65,49 +65,52 @@ class State:
         if self._license is not None:
             self._graph.add((us, SDO.license, Literal(self._license)))
         if self._keywords is not None:
-            self._graph.add(
-                (us, SDO.keywords, Literal('"' + '","'.join(self._keywords) + '"'))
-            )
+            if any("," in keyword for keyword in self._keywords):
+                raise ValueError("keywords may not include commas")
+            self._graph.add((us, SDO.keywords, Literal(",".join(self._keywords))))
 
     def add(
         self,
         *,
         cell_type: str,
-        model_probability: float,
+        probability: float,
         polygon_coords: Sequence[Tuple[int, int]],
-        wsi_source: str,
-    ) -> "State":
+    ):
         """Add a sample to the state."""
-        # TODO: do we care about the order in which items appear in the RDF file?
-        # It seems that the nodes are sorted by uuid.
-
         points = " ".join(f"{x},{y}" for x, y in polygon_coords)
         svg_polygon = f"<polygon points={points} />"
         del points
-        uri_ref_cell_type = URIRef(_cell_type_to_snomed(cell_type))
 
-        target = BNode()
-        selection = BNode()
-        prob = BNode()
         uuid_ref = URIRef(f"urn:uuid:{uuid.uuid4().hex}")
+        self._graph.add((uuid_ref, RDF.type, w3_oa.Annotation))
+        # self._graph.add((uuid_ref, w3_oa.hasBody, _cell_type_to_snomed(cell_type)))
 
-        self._graph.add((uuid_ref, RDF.type, uriref_annotation))
-        self._graph.add((uuid_ref, uriref_body, prob))
-        self._graph.add((prob, uriref_model_output, Literal(model_probability)))
-        self._graph.add((prob, RDF.type, uri_ref_cell_type))
-        self._graph.add((uuid_ref, uriref_target, target))
-        self._graph.add((target, RDF.type, uriref_fragment_selector))
-        self._graph.add((target, uriref_selector, selection))
-        # TODO: add conformsTo
-        self._graph.add((selection, RDF.value, Literal(svg_polygon)))
-        self._graph.add((target, uriref_source, URIRef(wsi_source)))
-        self._graph.bind("oa", URIRef("http://www.w3.org/ns/oa/"))
-        self._graph.bind("prob", URIRef("https://bmi.stonybrookmedicine.edu/ns/"))
-        return self
+        # Add prediction probability.
+        prob_node = BNode()
+        self._graph.add((prob_node, RDF.type, _cell_type_to_snomed(cell_type)))
+        self._graph.add(
+            (
+                prob_node,
+                URIRef("hal:hasCertainty"),
+                Literal(probability, datatype=XSD.float),
+            )
+        )
+        self._graph.add((uuid_ref, w3_oa.hasBody, prob_node))
+
+        # Add polygon.
+        polygon_node = BNode()
+        self._graph.add((polygon_node, RDF.type, w3_oa.FragmentSelector))
+        self._graph.add((polygon_node, RDF.value, Literal(svg_polygon)))
+        self._graph.add((polygon_node, dcmi.conformsTo, w3_technical_reports.SVG))
+        self._graph.add((uuid_ref, w3_oa.hasSelector, polygon_node))
+
+        self._graph.bind("oa", w3_oa)
+        self._graph.bind("dcmi", dcmi)
+        self._graph.bind("snomed", snomed)
 
     def write(self, format="ttl"):
         """Write state of RDF to file."""
-        print(f"Writing to {self._path}")
+        print(f"Writing RDF graph to {self._path}")
         output = self._graph.serialize(destination=None, format=format)
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
@@ -122,12 +125,13 @@ def _get_timestamp() -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
-def _cell_type_to_snomed(cell_type: str) -> str:
+def _cell_type_to_snomed(cell_type: str) -> URIRef:
+    # Jakub found the terms using https://browser.ihtsdotools.org.
     d = {
-        "lymphocyte": "http://snomed.info/id/fakeIdForLymphocyte",
-        "tumor": "http://snomed.info/id/fakeIdForTumor",
-        "stroma": "http://snomed.info/id/fakeIdForStroma",
-        "misc": "http://snomed.info/id/fakeIdForMisc",
+        "lymphocyte": snomed["56972008"],
+        "tumor": snomed["252987004"],
+        "stroma": snomed["stromalCell"],
+        "misc": snomed["49634009"],
     }
     try:
         return d[cell_type.lower()]
