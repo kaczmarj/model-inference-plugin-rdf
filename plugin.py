@@ -3,11 +3,12 @@
 import builtins
 import datetime
 import gzip
+import hashlib
+from os import PathLike
 from pathlib import Path
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 import uuid
 
 from rdflib import BNode
@@ -36,10 +37,12 @@ class State:
     def __init__(
         self,
         *,
-        path: Union[Path, str],
+        path: PathLike[str],
         creator: str,
         name: str,
         description: str,
+        slide_path: PathLike[str],
+        github_url: str,
         license: Optional[str] = None,
         keywords: Optional[Sequence[str]] = None,
     ) -> "State":
@@ -47,6 +50,8 @@ class State:
         self._creator = creator
         self._name = name
         self._description = description
+        self._slide_path = slide_path
+        self._github_url = github_url
         self._license = license
         self._keywords = keywords
         self._path = Path(path).resolve()
@@ -55,19 +60,28 @@ class State:
         self._add_header()
 
     def _add_header(self):
-        # TODO: how to reference self in rdf graph? I don't want this to be Dataset.
         self._graph.bind("schema", SDO)
-        us = URIRef("")
-        self._graph.add((us, RDF.type, SDO.Dataset))
-        self._graph.add((us, SDO.creator, Literal(self._creator)))
-        self._graph.add((us, SDO.dateCreated, Literal(_get_timestamp())))
-        self._graph.add((us, SDO.description, Literal(self._description)))
+        md5_of_slide = _md5sum(self._slide_path)
+        md5_of_slide = f"<urn:md5:{md5_of_slide}>"
+        create_action = BNode()
+        self._graph.add((create_action, RDF.type, SDO.CreateAction))
+        self._graph.add((create_action, SDO.description, Literal(self._description)))
+        self._graph.add((create_action, SDO.instrument, Literal(self._github_url)))
+        self._graph.add((create_action, SDO.name, Literal(self._name)))
+        self._graph.add((create_action, SDO.object, Literal(md5_of_slide)))
+        self._graph.add((create_action, SDO.creator, Literal(self._creator)))
+        self._graph.add((create_action, SDO.dateCreated, Literal(_get_timestamp())))
         if self._license is not None:
-            self._graph.add((us, SDO.license, Literal(self._license)))
+            self._graph.add((create_action, SDO.license, Literal(self._license)))
         if self._keywords is not None:
             if any("," in keyword for keyword in self._keywords):
                 raise ValueError("keywords may not include commas")
-            self._graph.add((us, SDO.keywords, Literal(",".join(self._keywords))))
+            self._graph.add(
+                (create_action, SDO.keywords, Literal(",".join(self._keywords)))
+            )
+        self._graph.add((create_action, SDO.result, URIRef("")))
+        # TODO: how do we add the CreateAction node to the graph?
+        self._graph.add((URIRef(""), RDF.type, create_action))
 
     def add(
         self,
@@ -125,12 +139,24 @@ def _get_timestamp() -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
+def _md5sum(path: PathLike[str]) -> str:
+    """Calculate MD5 hash of a file."""
+    md5 = hashlib.md5()
+    with open(path, "rb") as f:
+        while True:
+            data = f.read(1024 * 64)  # 64 kb
+            if not data:
+                break
+            md5.update(data)
+    return md5.hexdigest()
+
+
 def _cell_type_to_snomed(cell_type: str) -> URIRef:
     # Jakub found the terms using https://browser.ihtsdotools.org.
     d = {
+        "background": Literal("background"),  # TODO: change this.
         "lymphocyte": snomed["56972008"],
         "tumor": snomed["252987004"],
-        "stroma": snomed["stromalCell"],
         "misc": snomed["49634009"],
     }
     try:
