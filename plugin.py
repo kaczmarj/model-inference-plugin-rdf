@@ -17,13 +17,13 @@ from rdflib import Literal
 from rdflib import URIRef
 from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
-from rdflib.namespace import SDO
 from rdflib.namespace import XSD
 
+SDO = Namespace("https://schema.org/")
 dcmi = Namespace("http://purl.org/dc/terms/")
 sbubmi_terms = Namespace("https://bmi.stonybrookmedicine.edu/ns/")
-snomed = Namespace("http://purl.bioontology.org/ontology/SNOMEDCT")
-w3_oa = Namespace("http://www.w3.org/ns/oa/")
+snomed = Namespace("http://snomed.info/id/")
+w3_oa = Namespace("http://www.w3.org/ns/oa#")
 w3_technical_reports = Namespace("https://www.w3.org/TR/")
 
 
@@ -43,6 +43,7 @@ class State:
         description: str,
         slide_path: PathLike[str],
         github_url: str,
+        creator_orcid_id: Optional[str] = None,
         license: Optional[str] = None,
         keywords: Optional[Sequence[str]] = None,
     ) -> "State":
@@ -52,6 +53,7 @@ class State:
         self._description = description
         self._slide_path = slide_path
         self._github_url = github_url
+        self._creator_orcid_id = creator_orcid_id
         self._license = license
         self._keywords = keywords
         self._path = Path(path).resolve()
@@ -62,15 +64,23 @@ class State:
     def _add_header(self):
         self._graph.bind("schema", SDO)
         md5_of_slide = _md5sum(self._slide_path)
-        md5_of_slide = f"<urn:md5:{md5_of_slide}>"
+        md5_of_slide = f"urn:md5:{md5_of_slide}"
         create_action = BNode()
         self._graph.add((create_action, RDF.type, SDO.CreateAction))
         self._graph.add((create_action, SDO.description, Literal(self._description)))
-        self._graph.add((create_action, SDO.instrument, Literal(self._github_url)))
+        self._graph.add((create_action, SDO.instrument, URIRef(self._github_url)))
         self._graph.add((create_action, SDO.name, Literal(self._name)))
-        self._graph.add((create_action, SDO.object, Literal(md5_of_slide)))
+        self._graph.add((create_action, SDO.object, URIRef(md5_of_slide)))
         self._graph.add((create_action, SDO.creator, Literal(self._creator)))
         self._graph.add((create_action, SDO.dateCreated, Literal(_get_timestamp())))
+        self._graph.add(
+            (create_action, SDO.publisher, URIRef("https://ror.org/01882y777"))
+        )
+        self._graph.add(
+            (create_action, SDO.publisher, URIRef("https://ror.org/05qghxh33"))
+        )
+        if self._creator_orcid_id is not None:
+            self._graph.add((create_action, URIRef(self._creator_orcid_id)))
         if self._license is not None:
             self._graph.add((create_action, SDO.license, Literal(self._license)))
         if self._keywords is not None:
@@ -80,8 +90,6 @@ class State:
                 (create_action, SDO.keywords, Literal(",".join(self._keywords)))
             )
         self._graph.add((create_action, SDO.result, URIRef("")))
-        # TODO: how do we add the CreateAction node to the graph?
-        self._graph.add((URIRef(""), RDF.type, create_action))
 
     def add(
         self,
@@ -154,7 +162,7 @@ def _md5sum(path: PathLike[str]) -> str:
 def _cell_type_to_snomed(cell_type: str) -> URIRef:
     # Jakub found the terms using https://browser.ihtsdotools.org.
     d = {
-        "background": Literal("background"),  # TODO: change this.
+        "background": URIRef("urn:jakub:notCell"),  # TODO: change this.
         "lymphocyte": snomed["56972008"],
         "tumor": snomed["252987004"],
         "misc": snomed["49634009"],
