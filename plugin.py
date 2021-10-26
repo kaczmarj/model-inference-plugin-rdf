@@ -2,6 +2,7 @@
 
 import builtins
 import datetime
+import functools
 import gzip
 import hashlib
 from os import PathLike
@@ -19,7 +20,7 @@ from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
 from rdflib.namespace import XSD
 
-SDO = Namespace("https://schema.org/")
+sdo = Namespace("https://schema.org/")
 dcmi = Namespace("http://purl.org/dc/terms/")
 sbubmi_terms = Namespace("https://bmi.stonybrookmedicine.edu/ns/")
 snomed = Namespace("http://snomed.info/id/")
@@ -62,34 +63,34 @@ class State:
         self._add_header()
 
     def _add_header(self):
-        self._graph.bind("schema", SDO)
+        self._graph.bind("schema", sdo)
         md5_of_slide = _md5sum(self._slide_path)
         md5_of_slide = f"urn:md5:{md5_of_slide}"
         create_action = BNode()
-        self._graph.add((create_action, RDF.type, SDO.CreateAction))
-        self._graph.add((create_action, SDO.description, Literal(self._description)))
-        self._graph.add((create_action, SDO.instrument, URIRef(self._github_url)))
-        self._graph.add((create_action, SDO.name, Literal(self._name)))
-        self._graph.add((create_action, SDO.object, URIRef(md5_of_slide)))
-        self._graph.add((create_action, SDO.creator, Literal(self._creator)))
-        self._graph.add((create_action, SDO.dateCreated, Literal(_get_timestamp())))
+        self._graph.add((create_action, RDF.type, sdo.CreateAction))
+        self._graph.add((create_action, sdo.description, Literal(self._description)))
+        self._graph.add((create_action, sdo.instrument, URIRef(self._github_url)))
+        self._graph.add((create_action, sdo.name, Literal(self._name)))
+        self._graph.add((create_action, sdo.object, URIRef(md5_of_slide)))
+        self._graph.add((create_action, sdo.creator, Literal(self._creator)))
+        self._graph.add((create_action, sdo.dateCreated, Literal(_get_timestamp())))
         self._graph.add(
-            (create_action, SDO.publisher, URIRef("https://ror.org/01882y777"))
+            (create_action, sdo.publisher, URIRef("https://ror.org/01882y777"))
         )
         self._graph.add(
-            (create_action, SDO.publisher, URIRef("https://ror.org/05qghxh33"))
+            (create_action, sdo.publisher, URIRef("https://ror.org/05qghxh33"))
         )
         if self._creator_orcid_id is not None:
             self._graph.add((create_action, URIRef(self._creator_orcid_id)))
         if self._license is not None:
-            self._graph.add((create_action, SDO.license, Literal(self._license)))
+            self._graph.add((create_action, sdo.license, Literal(self._license)))
         if self._keywords is not None:
             if any("," in keyword for keyword in self._keywords):
                 raise ValueError("keywords may not include commas")
             self._graph.add(
-                (create_action, SDO.keywords, Literal(",".join(self._keywords)))
+                (create_action, sdo.keywords, Literal(",".join(self._keywords)))
             )
-        self._graph.add((create_action, SDO.result, URIRef("")))
+        self._graph.add((create_action, sdo.result, URIRef("")))
 
     def add(
         self,
@@ -136,7 +137,8 @@ class State:
         output = self._graph.serialize(destination=None, format=format)
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
-        open_fn = gzip.open if self._path.suffix == ".gz" else builtins.open
+        gz_open = functools.partial(gzip.open, compresslevel=6)
+        open_fn = gz_open if self._path.suffix == ".gz" else builtins.open
         with open_fn(self._path, mode="wt") as f:
             f.write(output)
 
