@@ -43,8 +43,9 @@ class State:
         creator: str,
         name: str,
         description: str,
-        slide_path: Union[PathLike[str], str],
         github_url: str,
+        slide_path: Optional[Union[PathLike[str], str]] = None,
+        slide_md5: Optional[str] = None,
         creator_orcid_id: Optional[str] = None,
         license: Optional[str] = None,
         keywords: Optional[Sequence[str]] = None,
@@ -53,26 +54,31 @@ class State:
         self._creator = creator
         self._name = name
         self._description = description
-        self._slide_path = slide_path
         self._github_url = github_url
+        self._slide_path = slide_path
+        self._slide_md5 = slide_md5
         self._creator_orcid_id = creator_orcid_id
         self._license = license
         self._keywords = keywords
         self._path = Path(path).resolve()
         self._graph = Graph()
 
+        if not any((self._slide_path, self._slide_md5)):
+            raise ValueError("must provide one of slide_path or slide_md5")
+
         self._add_header()
 
     def _add_header(self):
         self._graph.bind("schema", sdo)
-        md5_of_slide = _md5sum(self._slide_path)
-        md5_of_slide = f"urn:md5:{md5_of_slide}"
+        if self._slide_md5 is None:
+            self._slide_md5 = _md5sum(self._slide_path)
+        md5_uriref = URIRef(f"urn:md5:{self._slide_md5}")
         create_action = BNode()
         self._graph.add((create_action, RDF.type, sdo.CreateAction))
         self._graph.add((create_action, sdo.description, Literal(self._description)))
         self._graph.add((create_action, sdo.instrument, URIRef(self._github_url)))
         self._graph.add((create_action, sdo.name, Literal(self._name)))
-        self._graph.add((create_action, sdo.object, URIRef(md5_of_slide)))
+        self._graph.add((create_action, sdo.object, md5_uriref))
         self._graph.add((create_action, sdo.creator, Literal(self._creator)))
         self._graph.add((create_action, sdo.dateCreated, Literal(_get_timestamp())))
         self._graph.add(
