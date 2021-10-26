@@ -156,7 +156,7 @@ def _get_timestamp() -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
-def _md5sum(path: PathLike[str]) -> str:
+def _md5sum(path: "PathLike[str]") -> str:
     """Calculate MD5 hash of a file."""
     md5 = hashlib.md5()
     with open(path, "rb") as f:
