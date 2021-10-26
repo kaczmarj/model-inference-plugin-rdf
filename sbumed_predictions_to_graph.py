@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 import uuid
 
 from rdflib import BNode
@@ -38,11 +39,11 @@ class State:
     def __init__(
         self,
         *,
-        path: PathLike[str],
+        path: Union[PathLike[str], str],
         creator: str,
         name: str,
         description: str,
-        slide_path: PathLike[str],
+        slide_path: Union[PathLike[str], str],
         github_url: str,
         creator_orcid_id: Optional[str] = None,
         license: Optional[str] = None,
