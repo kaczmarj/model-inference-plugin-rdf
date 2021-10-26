@@ -143,7 +143,7 @@ class State:
         print(f"Writing RDF graph to {self._path}")
         output = self._graph.serialize(destination=None, format=format, encoding=None)
         # Output often has two blank lines at the end. We don't need that.
-        output = output.strip() + "\n"
+        output = output.strip()
         gz_open = functools.partial(gzip.open, compresslevel=6)
         open_fn = gz_open if self._path.suffix == ".gz" else builtins.open
         with open_fn(self._path, mode="wt") as f:
