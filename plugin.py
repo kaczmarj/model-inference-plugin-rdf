@@ -47,7 +47,7 @@ class State:
         creator_orcid_id: Optional[str] = None,
         license: Optional[str] = None,
         keywords: Optional[Sequence[str]] = None,
-    ) -> "State":
+    ):
 
         self._creator = creator
         self._name = name
