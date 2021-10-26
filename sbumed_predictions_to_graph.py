@@ -141,7 +141,7 @@ class State:
     def write(self, format="ttl"):
         """Write state of RDF to file."""
         print(f"Writing RDF graph to {self._path}")
-        output = self._graph.serialize(destination=None, format=format)
+        output = self._graph.serialize(destination=None, format=format, encoding=None)
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
         gz_open = functools.partial(gzip.open, compresslevel=6)
