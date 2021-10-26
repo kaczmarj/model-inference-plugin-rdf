@@ -23,7 +23,7 @@ jobs:
           python -m pip install --no-cache-dir -U pip setuptools wheel
           python -m pip install --no-cache-dir --editable .[dev]
       - name: Check types
-        run: mypy sbumed_predictions_to_graph.py tests/
+        run: mypy -m sbumed_predictions_to_graph
       - name: Check style
         run: flake8 sbumed_predictions_to_graph.py
       - name: Run python tests
