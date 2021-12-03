@@ -104,12 +104,39 @@ class State:
         *,
         cell_type: str,
         probability: float,
-        polygon_coords: Sequence[Tuple[int, int]],
+        polygon_coords: Optional[Sequence[Tuple[int, int]]] = None,
+        point: Optional[Tuple[int, int]] = None,
     ):
-        """Add a sample to the state."""
-        points = " ".join(f"{x},{y}" for x, y in polygon_coords)
-        svg_polygon = f"<polygon points={points} />"
-        del points
+        """Add a sample to the state.
+
+        For dot annotations, use `point`. For polygons, use `polygon_coords`.
+
+        Parameters
+        ----------
+        cell_type : str
+        probability : float
+        polygon_coords : sequence of (int, int)
+            Coordinates of the polygon. Sequence of (x, y) points. This argument is
+            mutually exclusive with `point`.
+        point : (int, int)
+            Coordinate of a dot. (x, y). This argument is mutually exclusive with
+            `polygon_coords`.
+        """
+        if polygon_coords is None and point is None:
+            raise ValueError("one of `polygon_coords` or `point` must be given")
+        if polygon_coords is not None and point is not None:
+            raise ValueError("`polygon_coords` and `point` are mutually exclusive")
+
+        if polygon_coords is not None:
+            points = " ".join(f"{x},{y}" for x, y in polygon_coords)
+            svg = f"<polygon points={points} />"
+            del points
+        elif point is not None:
+            if len(point) != 2:
+                raise ValueError("`point` must have two values")
+            svg = f'<circle cx="{point[0]}" cy="{point[1]}" />'
+        else:
+            raise ValueError("we should never get here... contact developer")
 
         uuid_ref = URIRef(f"urn:uuid:{uuid.uuid4().hex}")
         self._graph.add((uuid_ref, RDF.type, w3_oa.Annotation))
@@ -130,7 +157,7 @@ class State:
         # Add polygon.
         polygon_node = BNode()
         self._graph.add((polygon_node, RDF.type, w3_oa.FragmentSelector))
-        self._graph.add((polygon_node, RDF.value, Literal(svg_polygon)))
+        self._graph.add((polygon_node, RDF.value, Literal(svg)))
         self._graph.add((polygon_node, dcmi.conformsTo, w3_technical_reports.SVG))
         self._graph.add((uuid_ref, w3_oa.hasSelector, polygon_node))
 
