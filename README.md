@@ -19,7 +19,7 @@ plugin_state = sbumed_predictions_to_graph.State(
 plugin_state.add(
     cell_type="lymphocyte",
     probability=0.92,
-    polygon_coords=[(24, 50), (10, 10), (20, 4)],
+    polygon_coords=[(24, 50), (10, 10), (20, 4), (24, 50)],
 )
 
 # Write the state to disk. This file can be read by viewing software.
