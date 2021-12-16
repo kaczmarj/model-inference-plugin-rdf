@@ -7,7 +7,7 @@ from sbumed_predictions_to_graph import State
 
 def is_gzipped(path):
     with open(path, "rb") as f:
-        return f.read(2) == b"\x1f\x8b"
+        return f.read(3) == b"\x1f\x8b\x08"
 
 
 def test_min(tmpdir: Path):
