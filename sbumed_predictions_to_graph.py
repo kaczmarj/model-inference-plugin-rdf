@@ -21,15 +21,6 @@ from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
 from rdflib.namespace import XSD
 
-"""
-<urn:uuid:000012f1270d4a3981edc3370a915445> a oa:Annotation ;
-    oa:hasBody [ a snomed:49634009 ;
-            ns1:hasCertainty "0.8608247378308004"^^xsd:float ] ;
-    oa:hasSelector [ a oa:FragmentSelector ;
-            dcmi:conformsTo <http://www.opengis.net/doc/IS/wkt-crs/1.0> ;
-            rdf:value "POLYGON ((113786 29243, 113785 29244, 113780 29244))" ] .
-"""
-
 sdo = Namespace("https://schema.org/")
 dcmi = Namespace("http://purl.org/dc/terms/")
 sbubmi_terms = Namespace("https://bmi.stonybrookmedicine.edu/ns/")

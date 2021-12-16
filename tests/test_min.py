@@ -1,4 +1,3 @@
-from logging import currentframe
 from pathlib import Path
 
 import pytest
