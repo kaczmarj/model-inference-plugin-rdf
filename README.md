@@ -2,6 +2,9 @@
 
 # Example
 
+In the following example, we initialize the plugin, add a polygon, add a point,
+and save the state to disk.
+
 ```python
 import sbumed_predictions_to_graph
 
@@ -15,11 +18,18 @@ plugin_state = sbumed_predictions_to_graph.State(
     description="multi-class segmentation using HoverNet",
 )
 
-# Add predictions to the state.
+# Add polygon to the state.
 plugin_state.add(
     cell_type="lymphocyte",
     probability=0.92,
     polygon_coords=[(24, 50), (10, 10), (20, 4), (24, 50)],
+)
+
+# Add point to the state.
+plugin.state.add(
+    cell_type="lymphocyte",
+    probability=0.86,
+    point=[(25, 10)],
 )
 
 # Write the state to disk. This file can be read by viewing software.
