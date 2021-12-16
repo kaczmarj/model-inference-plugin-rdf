@@ -21,6 +21,15 @@ from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
 from rdflib.namespace import XSD
 
+"""
+<urn:uuid:000012f1270d4a3981edc3370a915445> a oa:Annotation ;
+    oa:hasBody [ a snomed:49634009 ;
+            ns1:hasCertainty "0.8608247378308004"^^xsd:float ] ;
+    oa:hasSelector [ a oa:FragmentSelector ;
+            dcmi:conformsTo <http://www.opengis.net/doc/IS/wkt-crs/1.0> ;
+            rdf:value "POLYGON ((113786 29243, 113785 29244, 113780 29244))" ] .
+"""
+
 sdo = Namespace("https://schema.org/")
 dcmi = Namespace("http://purl.org/dc/terms/")
 sbubmi_terms = Namespace("https://bmi.stonybrookmedicine.edu/ns/")
@@ -88,7 +97,9 @@ class State:
             (create_action, sdo.publisher, URIRef("https://ror.org/05qghxh33"))
         )
         if self._creator_orcid_id is not None:
-            self._graph.add((create_action, URIRef(self._creator_orcid_id)))
+            self._graph.add(
+                (create_action, sdo.identifier, URIRef(self._creator_orcid_id))
+            )
         if self._license is not None:
             self._graph.add((create_action, sdo.license, Literal(self._license)))
         if self._keywords is not None:
@@ -128,19 +139,18 @@ class State:
             raise ValueError("`polygon_coords` and `point` are mutually exclusive")
 
         if polygon_coords is not None:
-            points = " ".join(f"{x},{y}" for x, y in polygon_coords)
-            svg = f"<polygon points={points} />"
+            points = ", ".join(f"{x} {y}" for x, y in polygon_coords)
+            wkt = f"POLYGON (({points}))"
             del points
         elif point is not None:
             if len(point) != 2:
                 raise ValueError("`point` must have two values")
-            svg = f'<circle cx="{point[0]}" cy="{point[1]}" />'
+            wkt = f"POINT ({point[0]} {point[1]})"
         else:
             raise ValueError("we should never get here... contact developer")
 
         uuid_ref = URIRef(f"urn:uuid:{uuid.uuid4().hex}")
         self._graph.add((uuid_ref, RDF.type, w3_oa.Annotation))
-        # self._graph.add((uuid_ref, w3_oa.hasBody, _cell_type_to_snomed(cell_type)))
 
         # Add prediction probability.
         prob_node = BNode()
@@ -157,8 +167,14 @@ class State:
         # Add polygon.
         polygon_node = BNode()
         self._graph.add((polygon_node, RDF.type, w3_oa.FragmentSelector))
-        self._graph.add((polygon_node, RDF.value, Literal(svg)))
-        self._graph.add((polygon_node, dcmi.conformsTo, w3_technical_reports.SVG))
+        self._graph.add((polygon_node, RDF.value, Literal(wkt)))
+        self._graph.add(
+            (
+                polygon_node,
+                dcmi.conformsTo,
+                URIRef("http://www.opengis.net/doc/IS/wkt-crs/1.0"),
+            )
+        )
         self._graph.add((uuid_ref, w3_oa.hasSelector, polygon_node))
 
         self._graph.bind("oa", w3_oa)

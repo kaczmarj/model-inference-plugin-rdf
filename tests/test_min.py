@@ -1,3 +1,4 @@
+from logging import currentframe
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ def test_min(tmpdir: Path):
         path=out_path,
         creator="Me",
         name="test-output",
+        creator_orcid_id="https://orcid.org/0000-0000-0000-0000",
         description="This is just a test.",
         slide_path=__file__,
         github_url="foobar.com",
