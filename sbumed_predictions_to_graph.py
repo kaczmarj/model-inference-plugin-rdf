@@ -34,7 +34,34 @@ class UnknownCellType(Exception):
 
 
 class State:
-    """Object representing the state of the graph."""
+    """Object representing the state of the graph.
+
+    Parameters
+    ----------
+    path : PathLike, str
+        Path to save the RDF file. Extension can be `.ttl` or `.ttl.gz`.
+    create : str
+        First and last name of the person running this.
+    description : str
+        Description of what the outputs represent. For example,
+        "hovernet outputs for multi-class segmentation and classification".
+    github_url : str
+        GitHub URL of the code used to generate the predictions. Ideally, one should
+        link to the specific commit used.
+    slide_path : PathLike, str (optional)
+        Path to the whole slide image on which this prediction is run. The MD5 hash of
+        that file is calculated and stored in the RDF file to relate the labels to the
+        whole slide image. This argument is mutually-exclusive with `slide_md5`.
+    slide_md5 : str (optional)
+        The MD5 sum of the whole slide image file on which the prediction is run. This
+        argument is mutually exclusive with `slide_path`.
+    creator_orcid_id : str (optional)
+        URL to the creator's ORCID profile.
+    license : str (optional)
+        The license to apply to the inference outputs. For example, "MIT".
+    keywords : sequence of str (optional)
+        Keywords associated with the inference outputs.
+    """
 
     def __init__(
         self,
@@ -63,8 +90,10 @@ class State:
         self._path = Path(path).resolve()
         self._graph = Graph()
 
-        if not any((self._slide_path, self._slide_md5)):
+        if slide_path is None and slide_md5 is None:
             raise ValueError("must provide one of slide_path or slide_md5")
+        elif slide_path is not None and slide_md5 is not None:
+            raise ValueError("slide_path and slide_md5 are mutually-exclusive")
 
         self._add_header()
 
