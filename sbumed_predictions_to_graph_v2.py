@@ -96,8 +96,8 @@ class State:
         self._graph.add((create_action, sdo.result, URIRef("")))
 
         # Make the HalcyonROCrate node.
-        rocrate_node = BNode()
-        self._graph.add((rocrate_node, RDF.value, hal.HalcyonROCrate))
+        rocrate_node = URIRef("")
+        self._graph.add((rocrate_node, RDF.type, hal.HalcyonROCrate))
         self._graph.add((rocrate_node, sdo.creator, URIRef(orcid_url)))
         self._graph.add((rocrate_node, sdo.datePublished, Literal(_get_timestamp())))
         self._graph.add((rocrate_node, sdo.description, Literal(description)))
