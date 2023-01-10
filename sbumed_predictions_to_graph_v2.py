@@ -56,7 +56,6 @@ class State:
         del oslide
 
         self._slideref = URIRef(f"urn:md5:{self._slide_md5}")
-        self._graph.add((self._slideref, RDF.type, w3_oa.Annotation))
         self._graph.add(
             (self._slideref, exif.height, Literal(slide_height, datatype=XSD.int))
         )
