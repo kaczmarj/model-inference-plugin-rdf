@@ -205,13 +205,13 @@ def main(
     output_dir.mkdir(exist_ok=True, parents=True)
 
     for slide_path in tqdm.tqdm(slide_paths):
-        model_results_csv = model_results_dir / slide_path.with_suffix(".csv")
+        model_results_csv = model_results_dir / slide_path.with_suffix(".csv").name
         if not model_results_csv.exists():
             print("Model results CSV not found... skipping.")
             print(model_results_csv)
             continue
         df = pd.read_csv(model_results_csv)
-        output_path = output_dir / slide_path.with_suffix(".ttl.gz")
+        output_path = output_dir / slide_path.with_suffix(".ttl.gz").name
         if output_path.exists():
             print("Output TTL exists... skipping.")
             continue
