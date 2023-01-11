@@ -195,8 +195,10 @@ def main(
     description: str,
     github_url: str,
     orcid_url: str,
-    keywords: List[str],
+    keyword: List[str],
 ):
+    keywords = keyword
+    del keyword
     slide_paths = list(slide_dir.glob("*"))
     if output_dir.exists() and not output_dir.is_dir():
         raise ValueError("output directory name exists but is not a directory")
