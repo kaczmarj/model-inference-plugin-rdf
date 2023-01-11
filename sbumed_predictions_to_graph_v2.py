@@ -239,9 +239,8 @@ def main(
                     probability=row[f"prob_{col}"],
                     classname=col,
                 )
+            state.write(output_path)
             break
-
-    state.write(output_path)
 
 
 if __name__ == "__main__":
