@@ -166,7 +166,6 @@ class State:
     def write(self, path, format="ttl"):
         """Write state of RDF to file."""
         path = Path(path)
-        print(f"Writing RDF graph to {path}")
         output = self._graph.serialize(destination=None, format=format, encoding=None)
         # Output often has two blank lines at the end. We don't need that.
         output = output.strip() + "\n"
@@ -189,8 +188,7 @@ def _write_one_ttl(
 ):
     model_results_csv = model_results_dir / slide_path.with_suffix(".csv").name
     if not model_results_csv.exists():
-        print("Model results CSV not found... skipping.")
-        print(model_results_csv)
+        print("Model results CSV not found... skipping.", model_results_csv)
         return
     df = pd.read_csv(model_results_csv)
     output_path = output_dir / slide_path.with_suffix(".ttl.gz").name
