@@ -63,6 +63,7 @@ class State:
         description: str,
         github_url: str,
         orcid_url: str,
+        create_action_uri: str,
         keywords: List[str],
     ):
         slide_path = Path(slide_path)
@@ -85,7 +86,7 @@ class State:
         )
 
         # Make the CreateAction node.
-        create_action = URIRef("https://bmi.stonybrookmedicine.edu/wsinfer/tcga/2023")
+        create_action = URIRef(create_action_uri)
         self._graph.add((create_action, RDF.type, sdo.CreateAction))
         self._graph.add((create_action, sdo.name, Literal(name)))
         self._graph.add((create_action, sdo.description, Literal(description)))
@@ -184,6 +185,7 @@ def _write_one_ttl(
     description: str,
     github_url: str,
     orcid_url: str,
+    create_action_uri: str,
     keywords: List[str],
 ):
     model_results_csv = model_results_dir / slide_path.with_suffix(".csv").name
@@ -201,6 +203,7 @@ def _write_one_ttl(
         description=description,
         github_url=github_url,
         orcid_url=orcid_url,
+        create_action_uri=create_action_uri,
         keywords=keywords,
     )
     cols = [
@@ -231,6 +234,7 @@ def _write_one_ttl(
 @click.option("--description", required=True)
 @click.option("--github-url", required=True)
 @click.option("--orcid-url", required=True)
+@click.option("--create-action-uri", required=True)
 @click.option("--keyword", multiple=True)
 @click.option("--num-workers", type=int, default=8)
 def main(
@@ -242,6 +246,7 @@ def main(
     description: str,
     github_url: str,
     orcid_url: str,
+    create_action_uri: str,
     keyword: List[str],
     num_workers: int,
 ):
@@ -260,6 +265,7 @@ def main(
         description=description,
         github_url=github_url,
         orcid_url=orcid_url,
+        create_action_uri=create_action_uri,
         keywords=keywords,
     )
 
