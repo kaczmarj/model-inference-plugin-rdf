@@ -230,13 +230,13 @@ def main(
         ]
         print("Will add the following probabilities to TTL:")
         print(cols)
-        for row in tqdm.tqdm(df.itertuples(), total=len(df)):
+        for _, row in tqdm.tqdm(df.iterrows(), total=len(df)):
             for col in cols:
                 state.add_patch(
-                    minx=row.minx,
-                    miny=row.miny,
-                    maxx=row.minx + row.width,
-                    maxy=row.miny + row.height,
+                    minx=row["minx"],
+                    miny=row["miny"],
+                    maxx=row["minx"] + row["width"],
+                    maxy=row["miny"] + row["height"],
                     probability=row[f"prob_{col}"],
                     classname=col,
                 )
