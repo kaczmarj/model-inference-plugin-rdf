@@ -266,7 +266,7 @@ def main(
     )
 
     with multiprocessing.Pool(num_workers) as pool:
-        with tqdm(total=len(slide_paths)) as pbar:
+        with tqdm.tqdm(total=len(slide_paths)) as pbar:
             for _ in pool.imap_unordered(_write_one_ttl_single_arg, slide_paths):
                 pbar.update()
 
