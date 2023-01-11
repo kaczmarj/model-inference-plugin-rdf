@@ -10,7 +10,9 @@ import hashlib
 from pathlib import Path
 from typing import List
 
+import click
 import openslide
+import pandas as pd
 from rdflib import BNode
 from rdflib import Graph
 from rdflib import Literal
@@ -19,6 +21,7 @@ from rdflib.namespace import Namespace
 from rdflib.namespace import RDF
 from rdflib.namespace import XSD
 from shapely.geometry import box as _box
+import tqdm
 
 dcmi = Namespace("http://purl.org/dc/terms/")
 exif = Namespace("http://www.w3.org/2003/12/exif/ns#")
@@ -170,3 +173,74 @@ class State:
         open_fn = gz_open if path.suffix == ".gz" else open
         with open_fn(path, mode="wt") as f:
             f.write(output)
+
+
+@click.command()
+@click.option(
+    "--slide-dir", required=True, type=click.Path(exists=True, path_type=Path)
+)
+@click.option("--model-results-dir", required=True, type=click.Path(path_type=Path))
+@click.argument("--output-dir", required=True, type=click.Path(path_type=Path))
+@click.option("--name", required=True)
+@click.option("--description", required=True)
+@click.option("--github-url", required=True)
+@click.option("--orcid-url", required=True)
+@click.option("--keyword", multiple=True)
+def main(
+    *,
+    slide_dir: Path,
+    model_results_dir: Path,
+    output_dir: Path,
+    name: str,
+    description: str,
+    github_url: str,
+    orcid_url: str,
+    keywords: List[str],
+):
+    slide_paths = list(slide_dir.glob("*"))
+    if output_dir.exists() and not output_dir.is_dir():
+        raise ValueError("output directory name exists but is not a directory")
+    output_dir.mkdir(exist_ok=True, parents=True)
+
+    for slide_path in tqdm.tqdm(slide_paths):
+        model_results_csv = model_results_dir / slide_path.with_suffix(".csv")
+        if not model_results_csv.exists():
+            print("Model results CSV not found... skipping.")
+            continue
+        df = pd.read_csv(model_results_csv)
+        output_path = output_dir / slide_path.with_suffix(".ttl.gz")
+        if output_path.exists():
+            print("Output TTL exists... skipping.")
+            continue
+        state = State(
+            slide_path,
+            name=name,
+            description=description,
+            github_url=github_url,
+            orcid_url=orcid_url,
+            keywords=keywords,
+        )
+        cols = [
+            col[5:]
+            for col in df.filter(like="prob_").columns.tolist()
+            if "notumor" not in col
+        ]
+        print("Will add the following probabilities to TTL:")
+        print(cols)
+        for row in tqdm.tqdm(df.itertuples(), total=len(df)):
+            for col in cols:
+                state.add_patch(
+                    minx=row.minx,
+                    miny=row.miny,
+                    maxx=row.minx + row.width,
+                    maxy=row.miny + row.height,
+                    probability=row[f"prob_{col}"],
+                    classname=col,
+                )
+            break
+
+    state.write(output_path)
+
+
+if __name__ == "__main__":
+    main()
