@@ -208,6 +208,7 @@ def main(
         model_results_csv = model_results_dir / slide_path.with_suffix(".csv")
         if not model_results_csv.exists():
             print("Model results CSV not found... skipping.")
+            print(model_results_csv)
             continue
         df = pd.read_csv(model_results_csv)
         output_path = output_dir / slide_path.with_suffix(".ttl.gz")
