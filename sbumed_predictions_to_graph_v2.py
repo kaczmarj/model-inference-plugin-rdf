@@ -180,7 +180,7 @@ class State:
     "--slide-dir", required=True, type=click.Path(exists=True, path_type=Path)
 )
 @click.option("--model-results-dir", required=True, type=click.Path(path_type=Path))
-@click.argument("--output-dir", required=True, type=click.Path(path_type=Path))
+@click.option("--output-dir", required=True, type=click.Path(path_type=Path))
 @click.option("--name", required=True)
 @click.option("--description", required=True)
 @click.option("--github-url", required=True)
