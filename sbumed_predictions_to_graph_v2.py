@@ -209,7 +209,7 @@ def _write_one_ttl(
     cols = [
         col[5:]
         for col in df.filter(like="prob_").columns.tolist()
-        if "notumor" not in col
+        if "notumor" not in col and "notils" not in col
     ]
     for _, row in df.iterrows():
         for col in cols:
